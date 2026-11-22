@@ -219,7 +219,53 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Griever's levels). Remember to update alpha at the root as well.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        
+        def value(state, agentIndex, depth, alpha, beta):
+            
+            if depth == self.depth or state.isWin() or state.isLose():
+                return self.evaluationFunction(state) ## base case return score
+
+            nextAgent = (agentIndex + 1) % state.getNumAgents() ## next agent
+            nextDepth = depth
+            if nextAgent == 0:
+                nextDepth = depth + 1 ## when it is turn of player again depth increases
+
+            if agentIndex == 0:                     
+                v = float('-inf')
+                for action in state.getLegalActions(agentIndex):
+                    successor = state.generateSuccessor(agentIndex, action)
+                    v = max(v, value(successor, nextAgent, nextDepth, alpha, beta))
+                    if v > beta:                     # strict: no pruning on equality
+                        return v
+                    alpha = max(alpha, v)
+                return v
+            else:                                    
+                v = float('inf')
+                for action in state.getLegalActions(agentIndex):
+                    successor = state.generateSuccessor(agentIndex, action)
+                    v = min(v, value(successor, nextAgent, nextDepth, alpha, beta))
+                    if v < alpha:                    # strict: no pruning on equality
+                        return v
+                    beta = min(beta, v)
+                return v
+
+        numAgents = gameState.getNumAgents() 
+        nextAgent = 1 % numAgents
+        nextDepth = 1 if nextAgent == 0 else 0
+
+        alpha = float('-inf')
+        beta = float('inf')
+        bestScore = float('-inf')
+        bestAction = None
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            score = value(successor, nextAgent, nextDepth, alpha, beta)
+            if score > bestScore:                    # strict: ties keep the first action
+                bestScore = score
+                bestAction = action
+            alpha = max(alpha, bestScore)            # update alpha at the root too
+        return bestAction
 
 
 # ----------------------------------------------------------------------
