@@ -144,26 +144,61 @@ class MultiAgentSearchAgent(Agent):
 # ----------------------------------------------------------------------
 class MinimaxAgent(MultiAgentSearchAgent):
     """
-    Q2: Thomas maximises, every Griever minimises.
+        Q2: Thomas maximises, every Griever minimises.
+        """
     """
-
+                Returns the minimax action from gameState, searching self.depth plies
+                and evaluating the states at the bottom with self.evaluationFunction.
+        
+                Useful methods:
+                    gameState.getLegalActions(agentIndex)
+                    gameState.generateSuccessor(agentIndex, action)
+                    gameState.getNumAgents()
+                    gameState.isWin(), gameState.isLose()
+        
+                Hint: a recursive helper value(state, agentIndex, depth) is the most
+                natural way to write this. Work out which agent moves next, and when
+                the depth goes up.
+    """
+    
+    "*** YOUR CODE HERE ***"
+            
     def getAction(self, gameState):
-        """
-        Returns the minimax action from gameState, searching self.depth plies
-        and evaluating the states at the bottom with self.evaluationFunction.
+        
+        def value(state, agentIndex, depth):
+            
+            if depth == self.depth or state.isWin() or state.isLose():
+                return self.evaluationFunction(state)
 
-        Useful methods:
-            gameState.getLegalActions(agentIndex)
-            gameState.generateSuccessor(agentIndex, action)
-            gameState.getNumAgents()
-            gameState.isWin(), gameState.isLose()
 
-        Hint: a recursive helper value(state, agentIndex, depth) is the most
-        natural way to write this. Work out which agent moves next, and when
-        the depth goes up.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+            nextAgent = (agentIndex + 1) % state.getNumAgents() ## for the next index
+            nextDepth = depth
+            if nextAgent == 0:
+                nextDepth = depth + 1
+
+            if agentIndex == 0:                      # Thomas: max
+                best = float('-inf')
+                for action in state.getLegalActions(agentIndex):
+                    successor = state.generateSuccessor(agentIndex, action)
+                    best = max(best, value(successor, nextAgent, nextDepth))
+                return best
+            else:                                 # Griever: min
+                best = float('inf')
+                for action in state.getLegalActions(agentIndex):
+                    successor = state.generateSuccessor(agentIndex, action)
+                    best = min(best, value(successor, nextAgent, nextDepth))
+                return best
+
+
+        bestScore = float('-inf')
+        bestAction = None
+        for action in gameState.getLegalActions(0): ## legal action for plauyer
+            successor = gameState.generateSuccessor(0, action) ## successor for player
+            score = value(successor, 1 % gameState.getNumAgents(),1 if gameState.getNumAgents() == 1 else 0) ## depth 1 if agents = 1
+            if score > bestScore:
+                bestScore = score
+                bestAction = action
+        return bestAction
 
 
 # ----------------------------------------------------------------------
