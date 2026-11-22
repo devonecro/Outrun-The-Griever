@@ -95,9 +95,26 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getRunnerPosition()
         newKeys = successorGameState.getKeys()
         newGrieverPositions = successorGameState.getGrieverPositions()
-
+        
+        currentPos = currentGameState.getRunnerPosition()
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        
+        if successorGameState.isWin() or successorGameState.isLose():
+            return successorGameState.getScore()
+
+        score =  successorGameState.getScore()
+        targets = list(newKeys) or [successorGameState.getExit()]
+        least_distance_to_key_in_new_state = min(currentGameState.mazeDistance(newPos, t) for t in targets) ## gets the minimum distance for keys avilable in current state
+        if(grieverDistance):
+            grieverDistance = min(currentGameState.mazeDistance(newPos, g)for g in newGrieverPositions) ## minimum distance to a griver in current state
+        else:
+            grieverDistance = float('inf')
+        score += 10.0 / (least_distance_to_key_in_new_state) ## the closer we are the more score we get
+        if(grieverDistance == 1):
+            score -= 300 ## well less than 500 if game is lost
+        elif(grieverDistance == 2 ):
+            score -=20 ## well less than 500 if game is lost
+        return score
 
 
 def scoreEvaluationFunction(currentGameState):
