@@ -277,13 +277,50 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
 
     def getAction(self, gameState):
-        """
-        Returns the expectimax action from gameState, searching self.depth
-        plies. Model every Griever as choosing uniformly at random among its
-        legal actions, so a Griever's value is the AVERAGE of its children.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        numAgents = gameState.getNumAgents()
+
+        def nextTurn(agentIndex, depth):
+            """Return (nextAgentIndex, nextDepth). Depth increases only when
+            play wraps back around to Thomas (end of a ply)."""
+            nextAgentIndex = (agentIndex + 1) % numAgents
+            nextDepth = depth + 1 if nextAgentIndex == 0 else depth
+            return nextAgentIndex, nextDepth
+
+        def value(state, agentIndex, depth):
+            # Stop at the depth limit or when the game is over (even mid-ply).
+            if depth == self.depth or state.isWin() or state.isLose():
+                return self.evaluationFunction(state)
+
+            legalActions = state.getLegalActions(agentIndex)
+            if not legalActions:                      # safety net
+                return self.evaluationFunction(state)
+
+            nextAgentIndex, nextDepth = nextTurn(agentIndex, depth)
+
+            if agentIndex == 0:                       # Thomas: MAX node
+                bestValue = float('-inf')
+                for action in legalActions:
+                    successor = state.generateSuccessor(agentIndex, action)
+                    bestValue = max(bestValue, value(successor, nextAgentIndex, nextDepth))
+                return bestValue
+
+            # Griever: CHANCE node, average of children (float division)
+            totalValue = 0.0
+            for action in legalActions:
+                successor = state.generateSuccessor(agentIndex, action)
+                totalValue += value(successor, nextAgentIndex, nextDepth)
+            return totalValue / len(legalActions)
+
+        # Root: Thomas picks the action with the best expected value.
+        # Strict '>' keeps the FIRST action on ties.
+        nextAgentIndex, nextDepth = nextTurn(0, 0)
+        bestAction, bestValue = None, float('-inf')
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            actionValue = value(successor, nextAgentIndex, nextDepth)
+            if actionValue > bestValue:
+                bestValue, bestAction = actionValue, action
+        return bestAction
 
 
 # ----------------------------------------------------------------------
