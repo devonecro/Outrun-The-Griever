@@ -95,28 +95,33 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getRunnerPosition()
         newKeys = successorGameState.getKeys()
         newGrieverPositions = successorGameState.getGrieverPositions()
-        
-        currentPos = currentGameState.getRunnerPosition()
-        "*** YOUR CODE HERE ***"
-        
+
+        # Game over after this move: the score already says everything.
         if successorGameState.isWin() or successorGameState.isLose():
             return successorGameState.getScore()
 
-        score =  successorGameState.getScore()
+        score = successorGameState.getScore()
 
+        # Distance to the nearest code piece, or to the exit once all are collected
         targets = list(newKeys) or [successorGameState.getExit()]
-        least_distance_to_key_in_new_state = min(currentGameState.mazeDistance(newPos, t) for t in targets) ## gets the minimum distance for keys avilable in current state
+        distanceToTarget = min(currentGameState.mazeDistance(newPos, target)
+                               for target in targets)
 
+        # Distance to the closest Griever (infinity if there are none)
         closestGrieverDistance = float('inf')
         for grieverPosition in newGrieverPositions:
-            closestGrieverDistance = min(closestGrieverDistance,currentGameState.mazeDistance(newPos, grieverPosition))
+            distance = currentGameState.mazeDistance(newPos, grieverPosition)
+            closestGrieverDistance = min(closestGrieverDistance, distance)
 
-        score += 10.0 / max(distanceToTarget, 1)   # closer to target is better
+        # Closer to the target is better
+        score += 10.0 / max(distanceToTarget, 1)
 
+        # Penalise being next to a Griever
         if closestGrieverDistance == 1:
             score -= 300
         elif closestGrieverDistance == 2:
-            score -= 20
+            score -= 50
+
         return score
 
 
