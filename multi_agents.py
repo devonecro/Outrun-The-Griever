@@ -328,16 +328,62 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 # ----------------------------------------------------------------------
 def betterEvaluationFunction(currentGameState):
     """
-    Q5: a much better evaluation function for the search agents.
+    DESCRIPTION:
+    Scores a state as:
+        score  -  TOUR_WEIGHT * estimated_remaining_route  -  griever_danger
 
-    Unlike the Q1 evaluation function, this one scores a STATE, not an
-    action. Describe what it does here and in your report:
+    1. score: the game's own score, which already includes +50 per piece,
+       -1 per move and +500/-500 for win/lose.
+    2. estimated_remaining_route: a greedy tour. Starting at Thomas, repeatedly
+       walk (by true maze distance) to the nearest uncollected code piece,
+       then finish at the exit. Using the whole tour, not just the nearest
+       piece, makes Thomas plan to visit ALL pieces (key-hunt idea from
+       Project 1). Because the exit is always the last stop, the term also
+       works after every piece is collected.
+    3. griever_danger: only Grievers within DANGER_RADIUS maze steps matter,
+       with penalty GRIEVER_WEIGHT / distance, so adjacent Grievers are
+       penalised far more than distant ones (distant ones would make Thomas timid).
 
-    DESCRIPTION: <write something here>
+    Picking up a piece never lowers the value: +50 from the score outweighs
+    the small change in the tour length, so Thomas won't hover next to the
+    last piece.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+
+    # ---- tunable weights ----
+    TOUR_WEIGHT = 1.5
+    GRIEVER_WEIGHT = 100.0
+    DANGER_RADIUS = 3
+
+    # Terminal states: the score already says everything.
+    if currentGameState.isWin() or currentGameState.isLose():
+        return currentGameState.getScore()
+
+    runnerPosition = currentGameState.getRunnerPosition()
+    remainingKeys = list(currentGameState.getKeys())
+    exitPosition = currentGameState.getExit()
+
+    # feature 1: greedy tour through remaining keys, then the exit
+
+    estimatedRouteLength = 0
+    currentPosition = runnerPosition 
+    unvisitedKeys = remainingKeys[:]
+    while unvisitedKeys:
+        nearestKey = min(unvisitedKeys,key=lambda key: currentGameState.mazeDistance(currentPosition, key))
+        estimatedRouteLength += currentGameState.mazeDistance(currentPosition, nearestKey) ## increasing the estimated distance
+        currentPosition = nearestKey
+        unvisitedKeys.remove(nearestKey)
+    estimatedRouteLength += currentGameState.mazeDistance(currentPosition, exitPosition)
+
+    # feature 2: danger from nearby Grievers
+
+    grieverDanger = 0.0
+    for grieverPosition in currentGameState.getGrieverPositions():
+        distanceToGriever = currentGameState.mazeDistance(runnerPosition, grieverPosition)
+        if distanceToGriever <= DANGER_RADIUS:
+            grieverDanger += GRIEVER_WEIGHT / max(distanceToGriever, 1) ## if wee are in danger radius, the more we are away freom griever the less the weight gets
+
+    return currentGameState.getScore() - TOUR_WEIGHT * estimatedRouteLength - grieverDanger
 
 # Abbreviation
 better = betterEvaluationFunction
