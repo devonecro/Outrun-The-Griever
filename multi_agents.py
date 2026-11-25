@@ -103,17 +103,20 @@ class ReflexAgent(Agent):
             return successorGameState.getScore()
 
         score =  successorGameState.getScore()
+
         targets = list(newKeys) or [successorGameState.getExit()]
         least_distance_to_key_in_new_state = min(currentGameState.mazeDistance(newPos, t) for t in targets) ## gets the minimum distance for keys avilable in current state
-        if(grieverDistance):
-            grieverDistance = min(currentGameState.mazeDistance(newPos, g)for g in newGrieverPositions) ## minimum distance to a griver in current state
-        else:
-            grieverDistance = float('inf')
-        score += 10.0 / (least_distance_to_key_in_new_state) ## the closer we are the more score we get
-        if(grieverDistance == 1):
-            score -= 300 ## well less than 500 if game is lost
-        elif(grieverDistance == 2 ):
-            score -=20 ## well less than 500 if game is lost
+
+        closestGrieverDistance = float('inf')
+        for grieverPosition in newGrieverPositions:
+            closestGrieverDistance = min(closestGrieverDistance,currentGameState.mazeDistance(newPos, grieverPosition))
+
+        score += 10.0 / max(distanceToTarget, 1)   # closer to target is better
+
+        if closestGrieverDistance == 1:
+            score -= 300
+        elif closestGrieverDistance == 2:
+            score -= 20
         return score
 
 
@@ -351,9 +354,9 @@ def betterEvaluationFunction(currentGameState):
 
 
     # ---- tunable weights ----
-    TOUR_WEIGHT = 1.5
-    GRIEVER_WEIGHT = 100.0
-    DANGER_RADIUS = 3
+    TOUR_WEIGHT = 2
+    GRIEVER_WEIGHT = 15
+    DANGER_RADIUS = 4
 
     # Terminal states: the score already says everything.
     if currentGameState.isWin() or currentGameState.isLose():
